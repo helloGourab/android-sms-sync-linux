@@ -1,0 +1,26 @@
+# --- Build Outputs ---
+/build
+.gradle/
+.gradle-kotlin-dsl-scripts/
+/app/build
+bin/
+gen/
+
+# --- IDE (Android Studio) ---
+.idea/*
+!.idea/codeStyles/
+!.idea/vcs.xml
+*.iml
+
+# --- Sensitive/Local Data ---
+# This matches the 'local.properties (SDK Location)' in your screenshot
+local.properties
+
+# --- NDK / Native ---
+.externalNativeBuild
+.cxx
+/captures
+
+# --- OS Specific ---
+.DS_Store
+Thumbs.db
