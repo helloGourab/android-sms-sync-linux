@@ -1,6 +1,7 @@
 package com.personalutil.sms_sync
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -17,6 +18,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.personalutil.sms_sync.ui.theme.Sms_syncTheme
+import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
+import java.io.IOException
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,15 +43,13 @@ class MainActivity : ComponentActivity() {
 fun ConfigScreen(prefs: SharedPreferences? = null) {
     val context = LocalContext.current
 
-    // Fallback values for Preview mode where prefs is null
     var serverUrl by remember {
-        mutableStateOf(prefs?.getString("server_url", "http://laptop.local:5656/sms") ?: "http://laptop.local:5656/sms")
+        mutableStateOf(prefs?.getString("server_url", "http://gourab-Vostro-15-3515.local:5656/sms") ?: "http://gourab-Vostro-15-3515.local:5656/sms")
     }
     var authToken by remember {
         mutableStateOf(prefs?.getString("auth_token", "mysecret") ?: "mysecret")
     }
 
-    // Permission launcher (Only runs in real app, ignored in Preview)
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -101,7 +105,59 @@ fun ConfigScreen(prefs: SharedPreferences? = null) {
         ) {
             Text("Save Configuration")
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // THE PING BUTTON
+        OutlinedButton(
+            onClick = {
+                if (serverUrl.isNotEmpty()) {
+                    sendManualTest(context, serverUrl, authToken)
+                } else {
+                    Toast.makeText(context, "URL is empty!", Toast.LENGTH_SHORT).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Send Test Ping")
+        }
     }
+}
+
+// Function to manually test the connection
+fun sendManualTest(context: Context, url: String, token: String) {
+    val client = OkHttpClient()
+    val json = JSONObject().apply {
+        put("from", "TEST-PHONE")
+        put("content", "Testing connection to Ubuntu!")
+    }
+
+    val requestBody = json.toString().toRequestBody("application/json".toMediaType())
+    val request = Request.Builder()
+        .url(url)
+        .addHeader("X-SMS-Token", token)
+        .post(requestBody)
+        .build()
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            (context as? Activity)?.runOnUiThread {
+                Toast.makeText(context, "Ping Failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+            val code = response.code
+            (context as? Activity)?.runOnUiThread {
+                if (response.isSuccessful) {
+                    Toast.makeText(context, "Ping Success! (200 OK)", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Server Replied: $code", Toast.LENGTH_LONG).show()
+                }
+            }
+            response.close()
+        }
+    })
 }
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -109,7 +165,6 @@ fun ConfigScreen(prefs: SharedPreferences? = null) {
 fun ConfigScreenPreview() {
     Sms_syncTheme {
         Surface {
-            // Passing null prefs here so the preview uses default strings
             ConfigScreen(prefs = null)
         }
     }
