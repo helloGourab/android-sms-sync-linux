@@ -15,7 +15,9 @@ class SmsReceiver : BroadcastReceiver() {
     private val client = OkHttpClient()
 
     override fun onReceive(context: Context, intent: Intent) {
+        Log.d("SmsReceiver", "onReceive called with action: ${intent.action}")
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
+            Log.d("SmsReceiver", "SMS_RECEIVED_ACTION matched!")
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
             val prefs = context.getSharedPreferences("Config", Context.MODE_PRIVATE)
 
