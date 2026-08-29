@@ -1,4 +1,4 @@
-## simple python server 
+## Simple Python Server 
 ```python
 import json
 import subprocess
